@@ -10,8 +10,14 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { FormError } from "../FormError";
 import { FormSuccess } from "../FormSuccess";
+import { login } from "@/actions/login";
+import { useState, useTransition } from "react";
 
 export const LoginForm = () => {
+    const [isPending, startTransition] = useTransition();
+    const [error, setError] = useState<string | undefined>("");
+    const [success, setSuccess] = useState<string | undefined>("");
+
     const form = useForm<z.infer<typeof LoginSchema>>({
         resolver: zodResolver(LoginSchema),
         defaultValues: {
@@ -21,7 +27,16 @@ export const LoginForm = () => {
     });
 
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+        setError(undefined);
+        setSuccess(undefined);
 
+        startTransition(() => {
+            login(values)
+                .then((data) => {
+                    setError(data.error);
+                    setSuccess(data.success);
+                })
+        })
     }
 
     return (
@@ -48,6 +63,7 @@ export const LoginForm = () => {
                                         </FormLabel>
                                         <FormControl>
                                             <Input
+                                                disabled={isPending}
                                                 {...field}
                                                 type="email"
                                                 placeholder="johndoe@mail.com"
@@ -67,6 +83,7 @@ export const LoginForm = () => {
                                         </FormLabel>
                                         <FormControl>
                                             <Input
+                                                disabled={isPending}
                                                 {...field}
                                                 type="password"
                                                 placeholder="********"
@@ -77,9 +94,10 @@ export const LoginForm = () => {
                                 )}
                             />
                         </div>
-                        <FormError message="" />
-                        <FormSuccess message="" />
+                        <FormError message={error} />
+                        <FormSuccess message={success} />
                         <Button
+                            disabled={isPending}
                             type="submit"
                             className="w-full"
                         >
